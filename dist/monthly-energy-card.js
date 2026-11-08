@@ -4,12 +4,10 @@
  *
  *   type: custom:monthly-energy-card
  *   entity: sensor.zaptec_go_2_energy_meter   # a sensor with state_class total_increasing
- *   title: Geladen per maand                  # optional
  *   offsets:                                  # optional: kWh missing from the statistics, per month
  *     "2026-04": 171.023
  */
 
-const DEFAULT_TITLE = "Geladen per maand";
 const MONTHS = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 // Statistics are compiled hourly, so refreshing more often gains nothing.
 const REFRESH_MS = 10 * 60e3;
@@ -28,11 +26,7 @@ const STYLE = `
     --me-bar-current: #7fbf73;
   }
   ha-card { padding: 28px 28px 24px; color: var(--me-text); }
-  h2 {
-    margin: 0; font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
-    font-size: 24px; font-weight: 700; line-height: 1.25;
-  }
-  .subtitle { margin-top: 6px; font-size: 15px; color: var(--me-muted); }
+  .subtitle { font-size: 15px; color: var(--me-muted); }
   .chart { display: flex; align-items: stretch; gap: 4px; height: 240px; margin-top: 24px; }
   .month { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; }
   .amount, .name {
@@ -44,8 +38,7 @@ const STYLE = `
   .current .bar { background: var(--me-bar-current); }
   .names { display: flex; gap: 4px; margin-top: 12px; }
   .name { flex: 1; min-width: 0; text-transform: uppercase; }
-  .footnote { margin-top: 18px; font-size: 15px; color: var(--me-muted); line-height: 1.5; }
-  .empty { color: var(--me-muted); margin-top: 16px; line-height: 1.5; }
+  .empty { color: var(--me-muted); line-height: 1.5; }
   @media (max-width: 480px) {
     ha-card { padding: 20px; }
     .chart { height: 180px; gap: 2px; }
@@ -92,7 +85,7 @@ class MonthlyEnergyCard extends HTMLElement {
         throw new Error(`Ongeldige offset ${key}: gebruik "JJJJ-MM": kWh.`);
       }
     }
-    this._config = { title: DEFAULT_TITLE, ...config };
+    this._config = config;
     this._months = null;
     this._error = null;
     this._fetchedAt = 0;
@@ -177,7 +170,6 @@ class MonthlyEnergyCard extends HTMLElement {
 
   _render() {
     if (!this._config || !this._hass) return;
-    const title = `<h2>${this._config.title}</h2>`;
     let body;
 
     if (this._error) {
@@ -195,7 +187,6 @@ class MonthlyEnergyCard extends HTMLElement {
       const months = this._months;
       const last = months.length - 1;
       const top = Math.max(...months, 1);
-      const total = months.reduce((a, b) => a + b, 0);
       const bars = months
         .map(
           (value, i) => `
@@ -210,11 +201,10 @@ class MonthlyEnergyCard extends HTMLElement {
       body = `
         <div class="subtitle">${range} ${this._year}, in kWh</div>
         <div class="chart">${bars}</div>
-        <div class="names">${names}</div>
-        <div class="footnote">Totaal ${this._year}: ${this._kwh(total)} kWh</div>`;
+        <div class="names">${names}</div>`;
     }
 
-    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card>${title}${body}</ha-card>`;
+    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card>${body}</ha-card>`;
   }
 }
 

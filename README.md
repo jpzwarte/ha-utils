@@ -5,8 +5,7 @@ Small Home Assistant dashboard helpers.
 ## Monthly energy card
 
 Shows the kWh per month of the current year for any cumulative energy sensor, for example how
-much a Zaptec charger delivered. The current month is highlighted, and the year's total is shown
-below the chart.
+much a Zaptec charger delivered. The current month is highlighted.
 
 It reads Home Assistant's long-term statistics, so the sensor needs
 `state_class: total_increasing` (for Zaptec: the charger's *Energy meter* sensor). Months before
@@ -16,8 +15,7 @@ hour.
 ```yaml
 type: custom:monthly-energy-card
 entity: sensor.zaptec_go_2_energy_meter
-title: Geladen per maand   # optional
-offsets:                   # optional
+offsets:   # optional
   "2026-04": 171.023
 ```
 
