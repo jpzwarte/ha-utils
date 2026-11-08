@@ -5,6 +5,8 @@
  *   type: custom:monthly-energy-card
  *   entity: sensor.zaptec_go_2_energy_meter   # a sensor with state_class total_increasing
  *   title: Geladen per maand                  # optional
+ *   offsets:                                  # optional: kWh missing from the statistics, per month
+ *     "2026-04": 171.023
  */
 
 const DEFAULT_TITLE = "Geladen per maand";
@@ -72,12 +74,24 @@ class MonthlyEnergyCard extends HTMLElement {
         s.attributes.device_class === "energy" &&
         ["total", "total_increasing"].includes(s.attributes.state_class)
     );
-    const pick = energy.find((s) => s.entity_id.includes("zaptec")) || energy[0];
+    // Session sensors reset after every session and can miss the last reading of one, so the
+    // charger's cumulative meter is the better source.
+    const notSession = energy.filter((s) => !s.entity_id.includes("session"));
+    const pick =
+      notSession.find((s) => s.entity_id.includes("energy_meter")) ||
+      notSession.find((s) => s.entity_id.includes("zaptec")) ||
+      notSession[0] ||
+      energy[0];
     return { entity: pick?.entity_id || "" };
   }
 
   setConfig(config) {
     if (!config.entity) throw new Error("Kies een energiesensor (entity).");
+    for (const [key, kwh] of Object.entries(config.offsets || {})) {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(key) || !Number.isFinite(kwh)) {
+        throw new Error(`Ongeldige offset ${key}: gebruik "JJJJ-MM": kWh.`);
+      }
+    }
     this._config = { title: DEFAULT_TITLE, ...config };
     this._months = null;
     this._error = null;
@@ -139,6 +153,10 @@ class MonthlyEnergyCard extends HTMLElement {
       for (const row of rows) {
         const { year, month } = this._monthOf(new Date(row.start));
         if (year === now.year && month < months.length) months[month] += row.change || 0;
+      }
+      for (const [key, kwh] of Object.entries(this._config.offsets || {})) {
+        const [year, month] = key.split("-").map(Number);
+        if (year === now.year && month <= months.length) months[month - 1] += kwh;
       }
       this._months = rows.length ? months : [];
       this._year = now.year;

@@ -17,10 +17,19 @@ hour.
 type: custom:monthly-energy-card
 entity: sensor.zaptec_go_2_energy_meter
 title: Geladen per maand   # optional
+offsets:                   # optional
+  "2026-04": 171.023
 ```
 
-Added from the card picker (**Energie per maand**), it preselects an energy sensor, preferring a
-Zaptec one.
+Use the cumulative meter rather than a session sensor: session sensors reset after every session
+and can miss the last reading of one.
+
+`offsets` adds kWh that are missing from the statistics to a given month, such as what a meter had
+already counted when Home Assistant started recording it. To find that amount, subtract the
+meter's first recorded month's `change` from its reading at the end of that month.
+
+Added from the card picker (**Energie per maand**), it preselects an energy sensor, preferring an
+energy meter and skipping session sensors.
 
 ## Installation
 
